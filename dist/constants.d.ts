@@ -38,6 +38,7 @@ export declare const FACTORY_ADDRESSES: {
     11111: string;
     1: string;
 };
+export declare const FACTORY_ADDRESS: string;
 interface PairAddresses {
     [token0Address: string]: {
         [token1Address: string]: string;
