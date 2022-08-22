@@ -51,6 +51,7 @@ export const FACTORY_ADDRESSES = {
   [ChainId.MAINNET]: '0x1d0721d247497593a400d01b02ada3be1129730d',
   [ChainId.SHASTA]: '0xb9fe040dd98a9718805c976f8a899ef17b0f43ed'
 }
+export const FACTORY_ADDRESS:string = '0x20d7873e5dbb36f82260f6a09e8e9173a3475c3e'
 
 // TODO: build that data structure from a simple array of (tokenA, tokenB, pairAddress) to avoid human error when adding pairs...
 

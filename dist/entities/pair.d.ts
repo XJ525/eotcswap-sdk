@@ -1,15 +1,11 @@
 import { Price } from './fractions/price';
 import { TokenAmount } from './fractions/tokenAmount';
-import { BaseProvider } from '@ethersproject/providers';
 import { BigintIsh, ChainId } from '../constants';
 import { Token } from './token';
 export declare class Pair {
     readonly liquidityToken: Token;
     private readonly tokenAmounts;
-    private static warningWasDisplayedOnce;
-    private static getAddressWarning;
     static getAddress(tokenA: Token, tokenB: Token): string;
-    static getAddressAsync(tokenA: Token, tokenB: Token, provider: BaseProvider): Promise<string>;
     constructor(tokenAmountA: TokenAmount, tokenAmountB: TokenAmount);
     /**
      * Returns true if the token is either token0 or token1

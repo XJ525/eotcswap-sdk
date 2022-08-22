@@ -11,6 +11,7 @@ var address = require('@ethersproject/address');
 var _Big = _interopDefault(require('big.js'));
 var toFormat = _interopDefault(require('toformat'));
 var _Decimal = _interopDefault(require('decimal.js-light'));
+var solidity = require('@ethersproject/solidity');
 var contracts = require('@ethersproject/contracts');
 var networks = require('@ethersproject/networks');
 var providers = require('@ethersproject/providers');
@@ -56,7 +57,8 @@ var SolidityType;
 
 var SOLIDITY_TYPE_MAXIMA = (_SOLIDITY_TYPE_MAXIMA = {}, _SOLIDITY_TYPE_MAXIMA[SolidityType.uint8] = /*#__PURE__*/JSBI.BigInt('0xff'), _SOLIDITY_TYPE_MAXIMA[SolidityType.uint256] = /*#__PURE__*/JSBI.BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'), _SOLIDITY_TYPE_MAXIMA); // @TRON only
 
-var FACTORY_ADDRESSES = (_FACTORY_ADDRESSES = {}, _FACTORY_ADDRESSES[exports.ChainId.NILE] = '0x20d7873e5dbb36f82260f6a09e8e9173a3475c3e', _FACTORY_ADDRESSES[exports.ChainId.MAINNET] = '0x1d0721d247497593a400d01b02ada3be1129730d', _FACTORY_ADDRESSES[exports.ChainId.SHASTA] = '0xb9fe040dd98a9718805c976f8a899ef17b0f43ed', _FACTORY_ADDRESSES); // @TRON
+var FACTORY_ADDRESSES = (_FACTORY_ADDRESSES = {}, _FACTORY_ADDRESSES[exports.ChainId.NILE] = '0x20d7873e5dbb36f82260f6a09e8e9173a3475c3e', _FACTORY_ADDRESSES[exports.ChainId.MAINNET] = '0x1d0721d247497593a400d01b02ada3be1129730d', _FACTORY_ADDRESSES[exports.ChainId.SHASTA] = '0xb9fe040dd98a9718805c976f8a899ef17b0f43ed', _FACTORY_ADDRESSES);
+var FACTORY_ADDRESS = '0x20d7873e5dbb36f82260f6a09e8e9173a3475c3e'; // @TRON
 
 function buildPairAddresses(list) {
   var res = {};
@@ -818,87 +820,27 @@ var Price = /*#__PURE__*/function (_Fraction) {
   return Price;
 }(Fraction);
 
-function getFactoryContract(chainId, provider) {
-  // memoize?
-  var address = FACTORY_ADDRESSES[chainId]; // todo: put abi in constants?
-
-  var abi = [{
-    constant: true,
-    inputs: [{
-      internalType: 'address',
-      name: 'tokenA',
-      type: 'address'
-    }, {
-      internalType: 'address',
-      name: 'tokenB',
-      type: 'address'
-    }],
-    name: 'getPair',
-    outputs: [{
-      internalType: 'address',
-      name: 'pair',
-      type: 'address'
-    }],
-    payable: false,
-    stateMutability: 'view',
-    type: 'function'
-  }];
-  var contract = new contracts.Contract(address, abi, provider);
-  return contract;
-}
-
+var PAIR_ADDRESS_CACHE = {};
 var Pair = /*#__PURE__*/function () {
   function Pair(tokenAmountA, tokenAmountB) {
     var tokenAmounts = tokenAmountA.token.sortsBefore(tokenAmountB.token) // does safety checks
     ? [tokenAmountA, tokenAmountB] : [tokenAmountB, tokenAmountA];
-    this.liquidityToken = new Token(tokenAmounts[0].token.chainId, Pair.getAddress(tokenAmounts[0].token, tokenAmounts[1].token), 18, 'WMC-V2', 'MCSwap V2');
+    this.liquidityToken = new Token(tokenAmounts[0].token.chainId, Pair.getAddress(tokenAmounts[0].token, tokenAmounts[1].token), 18, 'UNI-V2', 'Uniswap V2');
     this.tokenAmounts = tokenAmounts;
   }
 
-  Pair.getAddressWarning = function getAddressWarning(tokenA, tokenB) {
-    if (this.warningWasDisplayedOnce) return;
-    this.warningWasDisplayedOnce = true;
-    var message = ["Unknown pair contract address for pair " + tokenA.symbol + "/" + tokenB.symbol + " ", "(" + tokenA.address + ", " + tokenB.address + "). ", 'Open an issue at https://github.com/mcswap/swap-sdk/issues ', 'with this error message to get the pair added. ', 'You can also add the pair to PAIR_ADDRESSES in ', 'https://github.com/mcswap/swap-sdk/blob/master/src/constants.ts ', 'and send a pull request (if you know how!).'].join('');
-
-    if (typeof window === 'undefined') {
-      console.warn(message);
-    } else {
-      alert(message);
-    }
-  } // @TRON
-  // create2 opcode not available :(
-  // For now we just hardcode all pair addresses... :/
-  ;
-
   Pair.getAddress = function getAddress(tokenA, tokenB) {
-    var _pairAddresses$tokens;
+    var _PAIR_ADDRESS_CACHE, _PAIR_ADDRESS_CACHE$t;
 
-    // An alternative solution would be to make `getAddress` async (see getAddressAsync for an attempt) but it would require a relatively
-    // large refactor of both swap-interface and swap-sdk...
-    // console.warn('getAddress() is mocked with hardcoded swapv2 pair addresses until TVM implements create2 op code...')
     var tokens = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA]; // does safety checks
 
-    var pairAddresses = PAIR_ADDRESSES[tokens[0].chainId];
-    var pairAddress = pairAddresses === null || pairAddresses === void 0 ? void 0 : (_pairAddresses$tokens = pairAddresses[tokens[0].address.toLowerCase()]) === null || _pairAddresses$tokens === void 0 ? void 0 : _pairAddresses$tokens[tokens[1].address.toLowerCase()];
+    if (((_PAIR_ADDRESS_CACHE = PAIR_ADDRESS_CACHE) === null || _PAIR_ADDRESS_CACHE === void 0 ? void 0 : (_PAIR_ADDRESS_CACHE$t = _PAIR_ADDRESS_CACHE[tokens[0].address]) === null || _PAIR_ADDRESS_CACHE$t === void 0 ? void 0 : _PAIR_ADDRESS_CACHE$t[tokens[1].address]) === undefined) {
+      var _PAIR_ADDRESS_CACHE2, _extends2, _extends3;
 
-    if (pairAddress === undefined) {
-      this.getAddressWarning(tokens[0], tokens[1]); // return a dummy address to avoid breaking swap-interface
-
-      return '0xdEADBEeF00000000000000000000000000000000';
+      PAIR_ADDRESS_CACHE = _extends({}, PAIR_ADDRESS_CACHE, (_extends3 = {}, _extends3[tokens[0].address] = _extends({}, (_PAIR_ADDRESS_CACHE2 = PAIR_ADDRESS_CACHE) === null || _PAIR_ADDRESS_CACHE2 === void 0 ? void 0 : _PAIR_ADDRESS_CACHE2[tokens[0].address], (_extends2 = {}, _extends2[tokens[1].address] = address.getCreate2Address(FACTORY_ADDRESS, solidity.keccak256(['bytes'], [solidity.pack(['address', 'address'], [tokens[0].address, tokens[1].address])]), INIT_CODE_HASH), _extends2)), _extends3));
     }
 
-    return pairAddress;
-  } // TODO(tron): implement caching logic
-  ;
-
-  Pair.getAddressAsync = function getAddressAsync(tokenA, tokenB, provider) {
-    try {
-      // TODO: cache pair addresses...
-      var contract = getFactoryContract(tokenA.chainId, provider);
-      return Promise.resolve(contract.getPair(tokenA.address, tokenB.address));
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    return PAIR_ADDRESS_CACHE[tokens[0].address][tokens[1].address];
   }
   /**
    * Returns true if the token is either token0 or token1
@@ -1071,33 +1013,7 @@ var Pair = /*#__PURE__*/function () {
   }]);
 
   return Pair;
-}(); // @TRON
-
-/*
-public static getAddress(tokenA: Token, tokenB: Token): string {
-  const tokens = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
-
-  if (PAIR_ADDRESS_CACHE?.[tokens[0].address]?.[tokens[1].address] === undefined) {
-    PAIR_ADDRESS_CACHE = {
-      ...PAIR_ADDRESS_CACHE,
-      [tokens[0].address]: {
-        ...PAIR_ADDRESS_CACHE?.[tokens[0].address],
-        // @TODO(tron): this will not work cause our contract does not
-        // use create2
-        [tokens[1].address]: getCreate2Address(
-          FACTORY_ADDRESS,
-          keccak256(['bytes'], [pack(['address', 'address'], [tokens[0].address, tokens[1].address])]),
-          INIT_CODE_HASH
-        )
-      }
-    }
-  }
-
-  return PAIR_ADDRESS_CACHE[tokens[0].address][tokens[1].address]
-}
-*/
-
-Pair.warningWasDisplayedOnce = false;
+}();
 
 var Route = /*#__PURE__*/function () {
   function Route(pairs, input, output) {
