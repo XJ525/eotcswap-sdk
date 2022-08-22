@@ -20,7 +20,7 @@ export enum Rounding {
   ROUND_UP
 }
 
-export const INIT_CODE_HASH = '0x278d8201610c32bb650c43e9c27bb9124680c6c6b82d65d58a4117c055f01573'
+export const INIT_CODE_HASH = '0x25ba9c789f8f74c1f3e6094d49b4a75a74aa6529d2a1ec61c5ef7ee4dc650ed8'
 
 export const MINIMUM_LIQUIDITY = JSBI.BigInt(1000)
 
@@ -47,7 +47,7 @@ export const SOLIDITY_TYPE_MAXIMA = {
 
 // @TRON only
 export const FACTORY_ADDRESSES = {
-  [ChainId.NILE]: '0x41da32ec09fb54ab5f5742f1eb730003caac0bbf',
+  [ChainId.NILE]: '0x20d7873e5dbb36f82260f6a09e8e9173a3475c3e',
   [ChainId.MAINNET]: '0x1d0721d247497593a400d01b02ada3be1129730d',
   [ChainId.SHASTA]: '0xb9fe040dd98a9718805c976f8a899ef17b0f43ed'
 }
